@@ -10,42 +10,52 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Required Libraries
-``` {r library}
+``` {r library, mesaage=FALSE}
 library(tidyverse)
 ```
 
-## Header
+## Import Data
+
+Import wide format of CSV data
 
 ``` {r read-file}
 df <- read_csv('wide_airline_data.csv')
+knitr::kable(df)
 ```
+
+Rename columns missing appropriate names
 
 ``` {r rename-columns}
 df <- df %>% 
   rename(carrier = 1,
          status = 2)
-df
+knitr::kable(df)
 ```
 
-## Header 2
+## Drop Rows
+
+Drop rows that are N/A in each column
 
 ``` {r remove-na}
 # remove rows where ALL columns 'N/A'
 df <- df %>% 
   filter(if_any(everything(), ~ !is.na(.)))
-df
+
+knitr::kable(df)
 ```
+
+Forward fill missing airline carrier names
 
 ``` {r ffill-airline}
-# remove rows where ALL columns 'N/A'
 df <- df %>% 
   fill(carrier)
-df
+
+knitr::kable(df)
 ```
 
+Transform columns with city names into long format and name new columns *city* and *flight_count*
 
 ``` {r melt}
-# remove rows where ALL columns 'N/A'
 df <- df %>% 
   gather("city", "flight_count", -c("carrier", "status"))
 df
