@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 The objective is to be able to transform a wide format data structure into a long format where you have 'tidy' the data to perform the analysis easier. The data is flight arrival counts from two airlines in five different cities. 
 
 ## Required Libraries
-``` {r library, mesaage=FALSE}
+``` {r library, message=FALSE}
 library(tidyverse)
 library(pollster)
 ```
@@ -79,7 +79,7 @@ knitr::kable(df)
 
 From the following chart, Phoenix has the most significant total late arrivals among the five cities at 427. However, AM West accounts for most of these delays, with 415, compared to Alaska, which only has 12. The second highest city is Seattle, where Alaska Airlines owns most of the delays with 305 compared to 61.
 
-``` {r compare-carriers, echo = FALSE}
+``` {r compare-carriers}
 compare_airlines <- df |> 
   filter(status == 'delayed')
 
@@ -95,11 +95,13 @@ compare_airlines |> ggplot(aes(x = flight_count, y = city, fill = carrier)) +
 knitr::kable(compare_airlines)
 ```
 
+---
+
 ### Comparing airline delays between Seattle and Phoenix
 
 Looking further into how these arrival airline delays are proportional to their total footprint flying into Phoenix and Seattle, we can see that it is not a fair comparison. While AM West led the way with 415 delayed flights into Phoenix, it only accounted for almost 8 % of more than 5,000 total flights. We can see the same for Alaska, where 305 delays accounted for roughly 14 % of more than 2,000 flights into Seattle. The chart shows how much closer their delays are to each other.
 
-``` {r compare-sea-pho, echo=FALSE, message=FALSE}
+``` {r compare-sea-pho, message=FALSE}
 compare_sea_pho <- df |> 
   filter(city %in% c('Phoenix', 'Seattle')) |> 
   group_by(carrier, city) |> 
@@ -123,10 +125,8 @@ compare_sea_pho |>
   xlab("Total Flights %") +
   ylab(element_blank()) +
   labs(title = 'Flight Arrival Status')
-  
-
-##status
-
+```
+```{r table-pct, echo=FALSE, message=FALSE}
 pct_table <- df |> 
   filter(city %in% c('Phoenix', 'Seattle')) |>
   inner_join(compare_sea_pho) |> 
