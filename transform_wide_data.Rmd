@@ -19,6 +19,8 @@ library(tidyverse)
 library(pollster)
 ```
 
+---
+
 ## Import Data
 
 Import wide format of CSV data
@@ -28,7 +30,7 @@ df <- read_csv('wide_airline_data.csv')
 knitr::kable(df)
 ```
 
-Rename columns missing appropriate names
+Rename missing column names with 'carrier' and 'status'
 
 ``` {r rename-columns}
 df <- df %>% 
@@ -37,9 +39,11 @@ df <- df %>%
 knitr::kable(df)
 ```
 
+---
+
 ## Drop Rows
 
-Drop rows that are N/A in every column
+Drop rows that contain N/A in every column
 
 ``` {r remove-na}
 # remove rows where ALL columns 'N/A'
@@ -67,9 +71,13 @@ df <- df %>%
 knitr::kable(df)
 ```
 
+---
+
 ## Conclusion
 
-From the following chart, Phoenix has the largest total late arrivals between the five cities. However, AM West accounts for a majority of these delays with 415, compared to Alaska only having 12. The second highest city is Seattle where now Alaska Airlines owns a majority of the delays with 305 compared to 61.
+### City with highest arrival delays
+
+From the following chart, Phoenix has the most significant total late arrivals among the five cities at 427. However, AM West accounts for most of these delays, with 415, compared to Alaska, which only has 12. The second highest city is Seattle, where Alaska Airlines owns most of the delays with 305 compared to 61.
 
 ``` {r compare-carriers, echo = FALSE}
 compare_airlines <- df |> 
@@ -77,12 +85,19 @@ compare_airlines <- df |>
 
 compare_airlines |> ggplot(aes(x = flight_count, y = city, fill = carrier)) +
   geom_bar(stat = 'identity') +
-  geom_text(aes(label = flight_count), position = position_stack(vjust = 0.5), size = 3) +
+  geom_text(aes(label = flight_count), 
+            position = position_stack(vjust = 0.5), 
+            size = 3,
+            fontface = 'bold') +
   scale_y_discrete(limits=rev) +
   labs(title = 'Arrival Flight Delays')
 
 knitr::kable(compare_airlines)
 ```
+
+### Comparing airline delays between Seattle and Phoenix
+
+Looking further into how these arrival airline delays are proportional to their total footprint flying into Phoenix and Seattle, we can see that it is not a fair comparison. While AM West led the way with 415 delayed flights into Phoenix, it only accounted for almost 8 % of more than 5,000 total flights. We can see the same for Alaska, where 305 delays accounted for roughly 14 % of more than 2,000 flights into Seattle. The chart shows how much closer their delays are to each other.
 
 ``` {r compare-sea-pho, echo=FALSE, message=FALSE}
 compare_sea_pho <- df |> 
@@ -90,9 +105,39 @@ compare_sea_pho <- df |>
   group_by(carrier, city) |> 
   crosstab_3way(x = carrier, y = status, z = city, weight = flight_count, format = 'long')
 
-compare_sea_pho |> ggplot(aes(x = pct, y = carrier, fill = city)) +
-  geom_bar(stat = 'identity')
+compare_sea_pho |> 
+  ggplot(aes(x = pct, y = carrier, fill = status)) +
+  geom_bar(stat = 'identity') +
+  facet_wrap(vars(city), ncol = 1) +
+  theme(strip.background = element_blank(), 
+        strip.placement = "outside",
+        strip.text.x = element_text(face = 'bold', size = 10),
+        legend.position = "top", 
+        legend.title = element_blank()) +
+  geom_text(aes(label = paste0(round(pct, 0), '%')), 
+              position = position_stack(vjust = 0.5), 
+              size = 3, 
+              fontface = 'bold',
+              colour = 'white') +
+  scale_fill_manual(values=c("#C85200", "#1170AA")) +
+  xlab("Total Flights %") +
+  ylab(element_blank()) +
+  labs(title = 'Flight Arrival Status')
   
 
-knitr::kable(compare_sea_pho)
+##status
+
+pct_table <- df |> 
+  filter(city %in% c('Phoenix', 'Seattle')) |>
+  inner_join(compare_sea_pho) |> 
+  filter(status == 'delayed') |>
+  relocate(n, .after = flight_count) |>
+  mutate(pct = round(pct, 2))
+              
+knitr::kable(pct_table)
 ```
+
+---
+
+## Recommendations
+We can see a higher overall arrival delay in Seattle over Phoenix. A possible lurking variable to discover would be how weather plays a factor since Seattle is known for rainy weather compared to Phoenix. Also, does an airline's hub location affect whether they are at the correct airports at the right time?
