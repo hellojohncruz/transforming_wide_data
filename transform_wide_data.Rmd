@@ -9,16 +9,21 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Introduction
+
+The objective is to be able to transform a wide format data structure into a long format where you have 'tidy' the data to perform the analysis easier. The data is flight arrival counts from two airlines in five different cities. 
+
 ## Required Libraries
 ``` {r library, mesaage=FALSE}
 library(tidyverse)
+library(pollster)
 ```
 
 ## Import Data
 
 Import wide format of CSV data
 
-``` {r read-file}
+``` {r read-file, message=FALSE}
 df <- read_csv('wide_airline_data.csv')
 knitr::kable(df)
 ```
@@ -34,7 +39,7 @@ knitr::kable(df)
 
 ## Drop Rows
 
-Drop rows that are N/A in each column
+Drop rows that are N/A in every column
 
 ``` {r remove-na}
 # remove rows where ALL columns 'N/A'
@@ -58,5 +63,36 @@ Transform columns with city names into long format and name new columns *city* a
 ``` {r melt}
 df <- df %>% 
   gather("city", "flight_count", -c("carrier", "status"))
-df
+
+knitr::kable(df)
+```
+
+## Conclusion
+
+From the following chart, Phoenix has the largest total late arrivals between the five cities. However, AM West accounts for a majority of these delays with 415, compared to Alaska only having 12. The second highest city is Seattle where now Alaska Airlines owns a majority of the delays with 305 compared to 61.
+
+``` {r compare-carriers, echo = FALSE}
+compare_airlines <- df |> 
+  filter(status == 'delayed')
+
+compare_airlines |> ggplot(aes(x = flight_count, y = city, fill = carrier)) +
+  geom_bar(stat = 'identity') +
+  geom_text(aes(label = flight_count), position = position_stack(vjust = 0.5), size = 3) +
+  scale_y_discrete(limits=rev) +
+  labs(title = 'Arrival Flight Delays')
+
+knitr::kable(compare_airlines)
+```
+
+``` {r compare-sea-pho, echo=FALSE, message=FALSE}
+compare_sea_pho <- df |> 
+  filter(city %in% c('Phoenix', 'Seattle')) |> 
+  group_by(carrier, city) |> 
+  crosstab_3way(x = carrier, y = status, z = city, weight = flight_count, format = 'long')
+
+compare_sea_pho |> ggplot(aes(x = pct, y = carrier, fill = city)) +
+  geom_bar(stat = 'identity')
+  
+
+knitr::kable(compare_sea_pho)
 ```
